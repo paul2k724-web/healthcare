@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { users, services, bookings, type User, type InsertUser, type Service, type InsertService, type Booking, type InsertBooking, type UpdateBookingRequest } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { users, services, bookings, reviews, type User, type InsertUser, type Service, type InsertService, type Booking, type InsertBooking, type UpdateBookingRequest, type Review, type InsertReview } from "@shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -8,6 +8,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUsersByRole(role: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<InsertUser>): Promise<User>;
 
   // Services
   getServices(): Promise<Service[]>;
@@ -19,6 +20,10 @@ export interface IStorage {
   getUserBookings(userId: number, role: string): Promise<Booking[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: number, updates: UpdateBookingRequest): Promise<Booking>;
+
+  // Reviews
+  createReview(review: InsertReview): Promise<Review>;
+  getReviewsByProvider(providerId: number): Promise<Review[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -35,6 +40,11 @@ export class DatabaseStorage implements IStorage {
   
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User> {
+    const [user] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
     return user;
   }
 
@@ -71,6 +81,15 @@ export class DatabaseStorage implements IStorage {
   async updateBooking(id: number, updates: UpdateBookingRequest): Promise<Booking> {
     const [booking] = await db.update(bookings).set(updates).where(eq(bookings.id, id)).returning();
     return booking;
+  }
+
+  async createReview(insertReview: InsertReview): Promise<Review> {
+    const [review] = await db.insert(reviews).values(insertReview).returning();
+    return review;
+  }
+
+  async getReviewsByProvider(providerId: number): Promise<Review[]> {
+    return await db.select().from(reviews).where(eq(reviews.providerId, providerId)).orderBy(desc(reviews.createdAt));
   }
 }
 
