@@ -70,9 +70,10 @@ export default function BookingFlow() {
     createBooking({
       serviceId,
       customerId: parseInt(user.id),
-      scheduledDate: scheduledDate.toISOString(),
+      scheduledDate,
       address,
       notes,
+      totalPrice: service.price,
       status: 'pending'
     }, {
       onSuccess: () => setLocation('/dashboard')
